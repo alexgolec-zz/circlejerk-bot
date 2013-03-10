@@ -35,17 +35,14 @@ import remember
 @celery.task(
     default_retry_delay=30 * 60, # retry every 30 minutes
     max_retries=5,
-    rate_limit=1.0 / (5 * 60) # wait 5 minutes between tweets
+    rate_limit=1.0 / (5) # wait 5 seconds between tweets
 )
 def post_to_twitter(text, url, force=False):
     logger.info('Setting status to "%s" for url "%s"' % (text, url))
-    try:
-        init_twitter_client(logger)
-        if force or not remember.already_tweeted(url):
-            twitter_client.statuses.update(status=text)
-            remember.remember_tweet(url)
-        else:
-            logger.info('Not tweeting "%s": already tweeted url "%s"'
-                    % (text, url))
-    except:
-        logger.error(traceback.format_exc())
+    init_twitter_client(logger)
+    if force or not remember.already_tweeted(url):
+        twitter_client.statuses.update(status=text)
+        remember.remember_tweet(url)
+    else:
+        logger.info('Not tweeting "%s": already tweeted url "%s"'
+                % (text, url))
