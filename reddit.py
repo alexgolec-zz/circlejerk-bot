@@ -82,18 +82,21 @@ def do_story(story):
     time.sleep(5)
     logger.info('Fetching %s' % (url,))
     story_data = json.loads(opener.open(url).read())
-    for key, value in iterate_string_leaves(story_data, 'body_html'):
-        value = unescaper.unescape(value)
-        soup = BeautifulSoup(value)
-        for anchor in soup.find_all('a'):
-            found_url = anchor.attrs['href']
-            print colored(found_url, 'green' if
-                    should_post_image(found_url)  else 'red')
-            if should_post_image(found_url):
-                message = str(found_url)
-                if not remember.already_tweeted(found_url):
-                    logger.info('Emitting url %s' % (found_url,))
-                    twitter_bot.post_to_twitter.delay(message, found_url)
+    for key, value in iterate_string_leaves(story_data, 'body_html', 'author'):
+        if key == 'body_html':
+            value = unescaper.unescape(value)
+            soup = BeautifulSoup(value)
+            for anchor in soup.find_all('a'):
+                found_url = anchor.attrs['href']
+                print colored(found_url, 'green' if
+                        should_post_image(found_url)  else 'red')
+                if should_post_image(found_url):
+                    message = str(found_url)
+                    if not remember.already_tweeted(found_url):
+                        logger.info('Emitting url %s' % (found_url,))
+                        twitter_bot.post_to_twitter.delay(message, found_url)
+        elif key == 'author':
+            print key, value
 
 for story in data['data']['children']:
     try:
