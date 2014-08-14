@@ -30,6 +30,7 @@ from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
+from contextlib import closing
 import remember
 
 @celery.task(
@@ -40,9 +41,10 @@ import remember
 def post_to_twitter(text, url, force=False):
     logger.info('Setting status to "%s" for url "%s"' % (text, url))
     init_twitter_client(logger)
-    if force or not remember.already_tweeted(url):
-        twitter_client.statuses.update(status=text)
-        remember.remember_tweet(url)
-    else:
-        logger.info('Not tweeting "%s": already tweeted url "%s"'
-                % (text, url))
+    with closing(remember.connect()) as conn:
+        if force or not remember.already_tweeted(conn, url):
+            twitter_client.statuses.update(status=text)
+            remember.remember_tweet(conn, url)
+        else:
+            logger.info('Not tweeting "%s": already tweeted url "%s"'
+                    % (text, url))

@@ -76,7 +76,7 @@ def should_post_image(url,
 
 import remember
 import twitter_bot
-def do_story(story):
+def do_story(conn, story):
     url = 'http://api.reddit.com'+story['data']['permalink']
     url = url.encode('utf-8', 'replace')
     time.sleep(5)
@@ -92,15 +92,15 @@ def do_story(story):
                         should_post_image(found_url)  else 'red')
                 if should_post_image(found_url):
                     message = str(found_url)
-                    if not remember.already_tweeted(found_url):
+                    if not remember.already_tweeted(conn, found_url):
                         logger.info('Emitting url %s' % (found_url,))
                         twitter_bot.post_to_twitter.delay(message, found_url)
-        elif key == 'author':
-            print key, value
+
+conn = remember.connect()
 
 for story in data['data']['children']:
     try:
-        do_story(story)
+        do_story(conn, story)
     except KeyboardInterrupt:
         break
     except:
